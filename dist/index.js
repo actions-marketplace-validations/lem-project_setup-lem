@@ -3302,7 +3302,8 @@ function run() {
             const inputVersion = core.getInput("version");
             const version = (inputVersion == 'snapshot') ? latestVersion : "v" + inputVersion;
             const platform = getPlatform();
-            const archiveName = `lem-${platform}-${version}.zip`; // lem-windows-v2.0.0.zip
+            const extension = (platform == 'linux') ? 'tar.gz' : 'zip';
+            const archiveName = `lem-${platform}-${version}.${extension}`; // lem-windows-v2.0.0.zip
             core.startGroup("Fetch Lem");
             {
                 let downloadUrl = `https://github.com/lem-project/lem/releases/download/${version}/${archiveName}`;
@@ -3313,10 +3314,16 @@ function run() {
                     `${tmp}/${archiveName}`
                 ]);
                 fs_1.default.mkdirSync(`${tmp}/lem-${version}`);
-                yield exec.exec('unzip', [`${tmp}/${archiveName}`, '-d', `${tmp}/lem-${version}`]);
+                if (platform == 'linux')
+                    yield exec.exec('tar', ['-xf', `${tmp}/${archiveName}`, '-C', `${tmp}/lem-${version}`]);
+                else
+                    yield exec.exec('unzip', [`${tmp}/${archiveName}`, '-d', `${tmp}/lem-${version}`]);
                 const options = { recursive: true, force: false };
                 yield io.mv(`${tmp}/lem-${version}`, `${home}/lem-${version}`, options);
                 core.addPath(`${home}/lem-${version}`);
+                if (platform == 'darwin') {
+                    core.addPath(`${home}/lem-${version}/lem.app/Contents/MacOS/`);
+                }
             }
             core.endGroup();
             /* Chmod so let the operating system know it's executable! */

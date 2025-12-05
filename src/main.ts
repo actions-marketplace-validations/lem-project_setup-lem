@@ -50,8 +50,9 @@ async function run(): Promise<void> {
         const inputVersion = core.getInput("version");
         const version = (inputVersion == 'snapshot') ? latestVersion : "v" + inputVersion;
         const platform = getPlatform();
+        const extension = (platform == 'linux') ? 'tar.gz' : 'zip';
 
-        const archiveName = `lem-${platform}-${version}.zip`;   // lem-windows-v2.0.0.zip
+        const archiveName = `lem-${platform}-${version}.${extension}`;   // lem-windows-v2.0.0.zip
 
         core.startGroup("Fetch Lem");
         {
@@ -65,10 +66,19 @@ async function run(): Promise<void> {
             ]);
 
             fs.mkdirSync(`${tmp}/lem-${version}`);
-            await exec.exec('unzip', [`${tmp}/${archiveName}`, '-d', `${tmp}/lem-${version}`]);
+
+            if (platform == 'linux')
+                await exec.exec('tar', ['-xf', `${tmp}/${archiveName}`, '-C', `${tmp}/lem-${version}`]);
+            else
+                await exec.exec('unzip', [`${tmp}/${archiveName}`, '-d', `${tmp}/lem-${version}`]);
+
             const options = { recursive: true, force: false };
             await io.mv(`${tmp}/lem-${version}`, `${home}/lem-${version}`, options);
             core.addPath(`${home}/lem-${version}`);
+
+            if (platform == 'darwin') {
+                core.addPath(`${home}/lem-${version}/lem.app/Contents/MacOS/`);
+            }
         }
         core.endGroup();
 
