@@ -1,13 +1,15 @@
 name: 'CI'
+
 on:
-  pull_request:
-  push:
-    paths-ignore:
-    - '**.md'
-    - '**.org'
-    branches:
-      - master
+  workflow_run:
+    workflows: ["Build"]
+    types:
+      - completed
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -19,7 +21,7 @@ jobs:
         lem_version: [2.0.0, snapshot]
 
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
 
     - uses: ./
       with:
